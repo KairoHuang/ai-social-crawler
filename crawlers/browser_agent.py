@@ -94,19 +94,29 @@ def _get_chromium_executable() -> str | None:
     """
     返回可用的 Chromium/Chrome 可执行文件路径。
     优先使用 Playwright 安装的 Chromium（跨平台、无需单独安装 Chrome），
-    若找不到则返回 None（让 browser-use 自行查找系统 Chrome）。
+    不使用 sync_playwright()（会与 asyncio 事件循环冲突）。
     """
-    # 1. 优先用 Playwright 的 Chromium（由 setup.sh 安装，路径可靠）
-    try:
-        from playwright.sync_api import sync_playwright
-        with sync_playwright() as pw:
-            path = pw.chromium.executable_path
-            if path and Path(path).exists():
-                return path
-    except Exception:
-        pass
+    import glob
 
-    # 2. macOS 常见的 Chrome 路径
+    # 1. Playwright 缓存目录（macOS/Linux 通用）
+    home = Path.home()
+    playwright_dirs = [
+        home / "Library" / "Caches" / "ms-playwright",  # macOS
+        home / ".cache" / "ms-playwright",              # Linux
+    ]
+    exe_patterns = [
+        # macOS arm64 / x64
+        "chromium-*/chrome-mac-*/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+        # Linux
+        "chromium-*/chrome-linux/chrome",
+    ]
+    for base in playwright_dirs:
+        for pattern in exe_patterns:
+            matches = sorted(glob.glob(str(base / pattern)), reverse=True)
+            if matches:
+                return matches[0]  # 最新版本
+
+    # 2. 系统安装的 Chrome（macOS）
     mac_paths = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         "/Applications/Chromium.app/Contents/MacOS/Chromium",
@@ -262,7 +272,7 @@ class BrowserAgentRunner:
         # 检测 Playwright 安装的 Chromium 并作为 fallback，确保跨机器可用。
         chrome_path = _get_chromium_executable()
         if chrome_path:
-            profile_kwargs["browser_binary_path"] = chrome_path
+            profile_kwargs["executable_path"] = chrome_path
 
         profile = BrowserProfile(**profile_kwargs)
         browser_session = BrowserSession(browser_profile=profile)
