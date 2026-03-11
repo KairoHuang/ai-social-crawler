@@ -58,8 +58,18 @@ success "虚拟环境已激活：$(which python)"
 # ── Step 3: 安装 Python 依赖 ──────────────────────────────────────────────────
 step "Step 3/5  安装 Python 依赖"
 
-pip install --upgrade pip -q
-pip install -r requirements.txt
+# macOS 上 Python 内置 SSL 证书有时未安装，先尝试修复，失败则用 --trusted-host 绕过
+PIP_SSL_FIX="--trusted-host pypi.org --trusted-host files.pythonhosted.org --trusted-host pypi.python.org"
+
+# 尝试修复 macOS SSL 证书（Python 官方安装包自带修复脚本）
+CERT_CMD=$(find /Applications -name "Install Certificates.command" 2>/dev/null | head -1)
+if [ -n "$CERT_CMD" ]; then
+    info "修复 macOS SSL 证书..."
+    bash "$CERT_CMD" &>/dev/null && success "SSL 证书已修复" || warn "SSL 证书修复失败，改用 --trusted-host 模式"
+fi
+
+pip install --upgrade pip -q $PIP_SSL_FIX
+pip install -r requirements.txt $PIP_SSL_FIX
 success "Python 依赖安装完成"
 
 # ── Step 4: 安装 Playwright 浏览器 ───────────────────────────────────────────
