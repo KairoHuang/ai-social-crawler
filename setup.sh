@@ -75,12 +75,15 @@ success "Python 依赖安装完成"
 # ── Step 4: 安装 Playwright 浏览器 ───────────────────────────────────────────
 step "Step 4/5  安装 Playwright Chromium 浏览器"
 
-if playwright install chromium 2>/dev/null; then
-    success "Playwright Chromium 安装完成"
-else
-    # fallback：用 python -m playwright
-    python -m playwright install chromium
-    success "Playwright Chromium 安装完成"
+# 必须用 venv 内的 playwright，全局 playwright 安装的浏览器路径不同
+python -m playwright install chromium
+success "Playwright Chromium 安装完成"
+
+# Linux 需要额外的系统依赖（macOS 跳过）
+if [[ "$(uname -s)" == "Linux" ]]; then
+    info "Linux 系统：安装 Chromium 系统依赖..."
+    python -m playwright install-deps chromium
+    success "系统依赖安装完成"
 fi
 
 # ── Step 5: 初始化配置文件和目录 ──────────────────────────────────────────────

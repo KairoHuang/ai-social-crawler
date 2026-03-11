@@ -228,9 +228,11 @@ class BrowserAgentRunner:
             profile_kwargs["proxy"] = {"server": self._proxy}
         if state_path:
             profile_kwargs["storage_state"] = state_path
-            # 必须显式传 user_data_dir=None，否则 browser-use 会自动创建临时目录
-            # 导致 "passed both storage_state AND user_data_dir" 警告
-            profile_kwargs["user_data_dir"] = None
+            # browser-use 0.12+ 在 user_data_dir=None 时仍会创建临时目录，
+            # 导致 "passed both storage_state AND user_data_dir" 警告。
+            # 解决办法：给一个固定的 user_data_dir，与 storage_state 共用，
+            # 这样 browser-use 不会新建临时目录。
+            profile_kwargs["user_data_dir"] = str(SESSION_DIR / "browser_profile")
 
         profile = BrowserProfile(**profile_kwargs)
         browser_session = BrowserSession(browser_profile=profile)
