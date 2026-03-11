@@ -228,11 +228,10 @@ class BrowserAgentRunner:
             profile_kwargs["proxy"] = {"server": self._proxy}
         if state_path:
             profile_kwargs["storage_state"] = state_path
-            # browser-use 0.12+ 在 user_data_dir=None 时仍会创建临时目录，
-            # 导致 "passed both storage_state AND user_data_dir" 警告。
-            # 解决办法：给一个固定的 user_data_dir，与 storage_state 共用，
-            # 这样 browser-use 不会新建临时目录。
-            profile_kwargs["user_data_dir"] = str(SESSION_DIR / "browser_profile")
+            # 注意：browser-use 0.12+ 会同时创建临时 user_data_dir 并载入 storage_state，
+            # 会打印 "passed both storage_state AND user_data_dir" 警告，但功能正常
+            # （storage_state 会覆盖 cookies）。不要设置 user_data_dir，否则
+            # Chromium 会把 JSON session 文件当成用户数据目录而崩溃。
 
         profile = BrowserProfile(**profile_kwargs)
         browser_session = BrowserSession(browser_profile=profile)
