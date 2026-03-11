@@ -90,6 +90,34 @@ def _get_llm():
     )
 
 
+def _get_chromium_executable() -> str | None:
+    """
+    返回可用的 Chromium/Chrome 可执行文件路径。
+    优先使用 Playwright 安装的 Chromium（跨平台、无需单独安装 Chrome），
+    若找不到则返回 None（让 browser-use 自行查找系统 Chrome）。
+    """
+    # 1. 优先用 Playwright 的 Chromium（由 setup.sh 安装，路径可靠）
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as pw:
+            path = pw.chromium.executable_path
+            if path and Path(path).exists():
+                return path
+    except Exception:
+        pass
+
+    # 2. macOS 常见的 Chrome 路径
+    mac_paths = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    ]
+    for p in mac_paths:
+        if Path(p).exists():
+            return p
+
+    return None
+
+
 def _cookie_str_to_storage_state(cookie_str: str, domain: str) -> dict:
     """
     将浏览器复制的 Cookie 字符串转换为 Playwright storage_state 格式。
@@ -228,10 +256,13 @@ class BrowserAgentRunner:
             profile_kwargs["proxy"] = {"server": self._proxy}
         if state_path:
             profile_kwargs["storage_state"] = state_path
-            # 注意：browser-use 0.12+ 会同时创建临时 user_data_dir 并载入 storage_state，
-            # 会打印 "passed both storage_state AND user_data_dir" 警告，但功能正常
-            # （storage_state 会覆盖 cookies）。不要设置 user_data_dir，否则
-            # Chromium 会把 JSON session 文件当成用户数据目录而崩溃。
+
+        # browser-use 0.12+ 默认用系统 Chrome/Chromium，在没有安装 Chrome 的机器上会
+        # 出现 "Failed to establish CDP connection" 错误。
+        # 检测 Playwright 安装的 Chromium 并作为 fallback，确保跨机器可用。
+        chrome_path = _get_chromium_executable()
+        if chrome_path:
+            profile_kwargs["browser_binary_path"] = chrome_path
 
         profile = BrowserProfile(**profile_kwargs)
         browser_session = BrowserSession(browser_profile=profile)
