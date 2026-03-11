@@ -1,0 +1,21 @@
+# Firecrawl — 用于 Reddit 等通用网页爬取
+firecrawl-py>=4.0.0
+
+# Twitter/X — 使用 Twitter 内部 API（免费，无需付费开发者账号）
+twscrape>=0.12.0
+
+# Instagram — 使用 Instagram 私有 API
+instagrapi>=2.0.0
+
+# Browser-Use AI 模式（真实浏览器驱动，绕过所有反爬）
+browser-use>=0.1.0
+playwright>=1.40.0
+langchain-openai>=0.1.0
+langchain-anthropic>=0.1.0  # 可选，用 Anthropic 时需要
+
+# 工具库
+python-dotenv>=1.0.0
+rich>=13.0.0
+click>=8.1.0
+pydantic>=2.0.0
+httpx>=0.25.0

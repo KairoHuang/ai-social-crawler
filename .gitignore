@@ -1,0 +1,29 @@
+# 环境变量（敏感信息）
+.env
+
+# Python 虚拟环境
+.venv/
+venv/
+env/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# 输出 & 会话（含 Cookie）
+output/
+
+# 数据库（含 twscrape 账号信息）
+accounts.db
+*.db
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
